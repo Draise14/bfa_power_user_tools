@@ -1,6 +1,3 @@
-# Blender Add-on Template
-# Contributor(s): Aaron Powell (aaron@lunadigital.tv)
-#
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation; either version 3 of the License, or
@@ -15,27 +12,7 @@
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 import bpy
-from bpy.types import Scene
 
-# For more information about Blender Properties, visit:
-# <https://blender.org/api/blender_python_api_2_78a_release/bpy.types.Property.html>
-from bpy.props import BoolProperty
-# from bpy.props import CollectionProperty
-# from bpy.props import EnumProperty
-# from bpy.props import FloatProperty
-# from bpy.props import IntProperty
-# from bpy.props import PointerProperty
-# from bpy.props import StringProperty
-# from bpy.props import PropertyGroup
+class BFA_UI_toggles(bpy.types.PropertyGroup):
+    BFA_PROP_toggle_insertkeyframes: bpy.props.BoolProperty(name='Insert Keyframes', description='Adds operators to insert a blank keyframe to the left or right of the timeline.\nLocated in the 3D View, Timeline, Dopesheet, and Graph editors', default=True)
 
-#
-# Add additional functions or classes here
-#
-
-# This is where you assign any variables you need in your script. Note that they
-# won't always be assigned to the Scene object but it's a good place to start.
-def register():
-    Scene.my_property = BoolProperty(default=True)
-
-def unregister():
-    del Scene.my_property

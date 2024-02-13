@@ -14,22 +14,18 @@
 
 import bpy
 
-class BFA_MT_timeline_key(bpy.types.Menu):
-    bl_idname = "BFA_MT_timeline_key"
-    bl_label = "Key"
+class BFA_UI_preferences(bpy.types.AddonPreferences):
+    bl_idname = __package__
 
     def draw(self, context):
         layout = self.layout
-        layout.separator()
-        '''
-        wm = context.window_manager
-        if wm.BFA_UI_addon_props.BFA_PROP_toggle_insertkeyframes:
-            layout.operator(operators.BFA_OT_insertframe_left).menu_func
-            layout.operator(operators.BFA_OT_insertframe_right).menu_func
-        '''
 
-    def menu_func(self, context):
-        wm = context.window_manager
-        if wm.BFA_UI_addon_props.BFA_PROP_toggle_insertkeyframes:
-            self.layout.menu(BFA_MT_timeline_key.bl_idname)
+        row = layout.row()
+        row.scale_y = 1.5
 
+        wm = context.window_manager
+
+        row = layout.row()
+        col = row.column(align=True)
+        col.label(text="Animation:", icon="TIME")
+        layout.prop(wm.BFA_UI_addon_props, "BFA_PROP_toggle_insertkeyframes")
