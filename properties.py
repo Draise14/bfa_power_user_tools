@@ -13,11 +13,16 @@
 
 import bpy
 
+from bpy.types import PropertyGroup
 
+from bpy.props import FloatProperty, BoolProperty, IntProperty, StringProperty
 
-class BFA_UI_toggles(bpy.types.PropertyGroup):
-    BFA_PROP_toggle_insertframes: bpy.props.BoolProperty(name='Insert/Remove Frames Operators', description='Adds operators to insert/remove a frame to the left or right of the timeline cursor.\nLocated in the 3D View, Timeline, Dopesheet, and Graph editors', default=True)
-    BFA_PROP_toggle_animationpanel: bpy.props.BoolProperty(name='Animation Toolshelf Operators', description='Adds the animation operators from the header to the toolshelf. \nLocated in the tabbed toolshelf in the 3D View under the Animation Tab > Animation Panel', default=True)
+class BFA_UI_toggles(PropertyGroup):
+    BFA_PROP_toggle_insertframes: BoolProperty(name='Frames Insert/Remove Operators', description='Adds operators to insert/remove a frame on the left or right of the timeline cursor.\nLocated in the 3D View, Timeline, Dopesheet, and Graph editors', default=True)
+    BFA_PROP_toggle_animationpanel: BoolProperty(name='Animation Toolshelf Operators', description='Adds the animation operators from the header to the toolshelf. \nLocated in the tabbed toolshelf in the 3D View under the Animation Tab > Animation Panel', default=True)
+    BFA_PROP_toggle_viewport: BoolProperty(name='Viewport Silhuette Toggle', description='Adds the viewport overlay silhuette toggle to the header of the 3D View editors. \nLocated header customizable buttons overlays in the 3D View under the drop down to the top right', default=True)
+    BFA_PROP_toggle_file: BoolProperty(name='Open Blend File Folder Operator', description='Adds the Open Blend File Folder operators in the File header menu. \nLocated in File header under the External Data sub-menu', default=True)
+    BFA_PROP_toggle_timelinetoggle: BoolProperty(name='Shows a toggle to Timeline in Dopesheet', description='Shows a quick toggle in the Dopsheet and Timeline to toggle to and from each other\nLocated in the Timeline and Dopesheet header', default=True)
 
 property_classes = [
     BFA_UI_toggles,
