@@ -20,7 +20,7 @@ bl_info = {
         "name": "Power User Tools",
         "description": "Additional set of user experience tools and operators to assist with every day use for the power user.",
         "author": "Draise (@trinumedia), Justo(Blenux)",
-        "version": (0, 2, 4),
+        "version": (0, 2, 5),
         "blender": (4, 4, 0),
         "location": "Varios consistent locations for the power user - customize as you need! ",
         "warning": "This is a Bforartists exclusive addon for the time being", # used for warning icon and text in add-ons panel

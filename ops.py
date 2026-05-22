@@ -13,6 +13,7 @@
 
 import bpy
 import os
+import mathutils
 from . import properties
 
 op = bpy.types.Operator
@@ -405,6 +406,119 @@ class BFA_OT_viewport_silhuette_toggle(op):
             self.layout.operator(BFA_PROP_toggle_viewport.bl_idname, icon=BFA_PROP_toggle_viewport.bl_icon)
 
 
+################## Grease Pencil Operators ##################
+
+class BFA_OT_gp_select_layer_under_mouse(bpy.types.Operator):
+    """Select all strokes of the layer under the mouse cursor in draw mode"""
+    bl_idname = "bfa.gp_select_layer_under_mouse"
+    bl_label = "Select Layer Under Mouse"
+    bl_description = "Detects the stroke under the mouse in draw mode and selects all strokes on that layer"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    @classmethod
+    def poll(cls, context):
+        obj = context.active_object
+        return obj and obj.type == 'GREASEPENCIL' and context.mode in {
+            'PAINT_GREASE_PENCIL',
+            'EDIT_GREASE_PENCIL',
+            'SCULPT_GREASE_PENCIL',
+            'VERTEX_GREASE_PENCIL',
+            'WEIGHT_GREASE_PENCIL',
+        }
+
+    def invoke(self, context, event):
+        region = context.region
+        region_data = context.region_data
+
+        if not region or not region_data:
+            self.report({'WARNING'}, "No active 3D viewport")
+            return {'CANCELLED'}
+
+        from bpy_extras.view3d_utils import location_3d_to_region_2d
+
+        mouse_x = event.mouse_region_x
+        mouse_y = event.mouse_region_y
+
+        obj = context.active_object
+        gp_data = obj.data
+        scene_frame = context.scene.frame_current
+        world_mat = obj.matrix_world
+
+        # Get brush from the current mode's tool settings for consistent hit radius
+        ts = context.tool_settings
+        mode = context.mode
+        brush = None
+        if mode == 'PAINT_GREASE_PENCIL':
+            brush = ts.gpencil_paint.brush if hasattr(ts, 'gpencil_paint') else None
+        elif mode == 'SCULPT_GREASE_PENCIL':
+            brush = ts.gpencil_sculpt.brush if hasattr(ts, 'gpencil_sculpt') else None
+        elif mode == 'VERTEX_GREASE_PENCIL':
+            brush = ts.gpencil_vertex.brush if hasattr(ts, 'gpencil_vertex') else None
+        elif mode == 'WEIGHT_GREASE_PENCIL':
+            brush = ts.gpencil_weight.brush if hasattr(ts, 'gpencil_weight') else None
+        hit_threshold_px = brush.size / 2 if brush else 15
+
+        hit_layers = set()
+
+        for layer in gp_data.layers:
+            if layer.hide:
+                continue
+            if layer in hit_layers:
+                continue
+
+            # Find the active keyframe at current scene frame
+            active_frame = None
+            for frame in layer.frames:
+                if frame.frame_number <= scene_frame:
+                    if active_frame is None or frame.frame_number > active_frame.frame_number:
+                        active_frame = frame
+
+            if active_frame is None:
+                continue
+
+            for stroke in active_frame.drawing.strokes:
+                for point in stroke.points:
+                    # Project world position to 2D screen coordinates
+                    world_pos = world_mat @ point.position
+                    screen_pos = location_3d_to_region_2d(region, region_data, world_pos)
+                    if screen_pos is None:
+                        continue  # Behind camera
+                    dx = screen_pos.x - mouse_x
+                    dy = screen_pos.y - mouse_y
+                    dist = (dx * dx + dy * dy) ** 0.5
+                    if dist < hit_threshold_px:
+                        hit_layers.add(layer)
+                        break
+                if layer in hit_layers:
+                    break
+
+        if hit_layers:
+            # Deselect all strokes across all layers
+            for layer in gp_data.layers:
+                for frame in layer.frames:
+                    for stroke in frame.drawing.strokes:
+                        stroke.select = False
+
+            # Select all strokes in the found layers and set the first hit as active
+            layer_names = []
+            for i, layer in enumerate(hit_layers):
+                layer_names.append(layer.name)
+                if i == 0:
+                    gp_data.layers.active = layer
+                for frame in layer.frames:
+                    for stroke in frame.drawing.strokes:
+                        stroke.select = True
+
+            self.report({'INFO'}, f"Selected strokes on: {', '.join(layer_names)}")
+            return {'FINISHED'}
+        else:
+            self.report({'WARNING'}, "No stroke found under mouse")
+            return {'CANCELLED'}
+
+    def menu_func(self, context):
+        self.layout.operator(BFA_OT_gp_select_layer_under_mouse.bl_idname, icon='GREASEPENCIL')
+
+
 ################## File Operators ##################
 class BFA_OT_open_blend_file_window(bpy.types.Operator):
     """Open the file explorer to show the current blend file"""
@@ -455,6 +569,8 @@ operator_list = [
     BFA_OT_viewport_silhuette_toggle,
     # File Operators
     BFA_OT_open_blend_file_window,
+    # Grease Pencil Operators
+    BFA_OT_gp_select_layer_under_mouse,
     # Add more operators as needed
 ]
 

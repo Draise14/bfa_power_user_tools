@@ -40,6 +40,30 @@ class BFA_MT_timeline_key(bpy.types.Menu):
             self.layout.menu(BFA_MT_timeline_key.bl_idname)
 
 
+# Grease Pencil Select Menu - shared across draw, sculpt, vertex paint, and weight paint modes
+class BFA_MT_gp_select(bpy.types.Menu):
+    bl_idname = "BFA_MT_gp_select"
+    bl_label = "Select"
+
+    def draw(self, context):
+        layout = self.layout
+        layout.operator(ops.BFA_OT_gp_select_layer_under_mouse.bl_idname, icon='GREASEPENCIL')
+
+    def menu_func(self, context):
+        self.layout.menu(BFA_MT_gp_select.bl_idname)
+
+
+# Draw handler for VIEW3D_MT_editor_menus - adds Select menu to GP modes that lack one
+def BFA_MT_editor_menus_gp_select(self, context):
+    mode_string = context.mode
+    if mode_string in {
+        'PAINT_GREASE_PENCIL',
+        'SCULPT_GREASE_PENCIL',
+        'WEIGHT_GREASE_PENCIL',
+    }:
+        self.layout.menu(BFA_MT_gp_select.bl_idname)
+
+
 # Timeline Editor Header Operators
 def BFA_HT_timeline_skipframes(self, context):
     if context.space_data.mode == 'TIMELINE':
@@ -63,7 +87,11 @@ def BFA_HT_timeline_skipframes(self, context):
 
 menu_classes = [
     BFA_MT_timeline_key,
+    BFA_MT_gp_select,
 ]
+
+# Store keymap items for cleanup
+ui_keymap_items = []
 
 
 def register():
@@ -105,6 +133,26 @@ def register():
     ## Timeline Editor
     bpy.types.DOPESHEET_HT_header.append(BFA_HT_timeline_skipframes)
 
+    ## Add Select menu to top-level header for GP modes that lack one
+    bpy.types.VIEW3D_MT_editor_menus.append(BFA_MT_editor_menus_gp_select)
+
+    ## Grease Pencil Edit & Vertex Paint - add operator to existing Select menu
+    bpy.types.VIEW3D_MT_select_edit_grease_pencil.append(ops.BFA_OT_gp_select_layer_under_mouse.menu_func)
+
+    ## Register Grease Pencil keymap for the operator
+    wm = bpy.context.window_manager
+    kc = wm.keyconfigs.addon
+    if kc:
+        km = kc.keymaps.new(name="Grease Pencil", space_type='EMPTY')
+        kmi = km.keymap_items.new(
+            ops.BFA_OT_gp_select_layer_under_mouse.bl_idname,
+            type='NONE',
+            value='PRESS',
+            any=True,
+        )
+        # Store for unregister
+        ui_keymap_items.append((km, kmi))
+
 def unregister():
     ## 3D View Editor
     bpy.types.VIEW3D_MT_object.remove(seperator)
@@ -140,6 +188,17 @@ def unregister():
 
     ## Timeline Editor
     bpy.types.DOPESHEET_HT_header.remove(BFA_HT_timeline_skipframes)
+
+    ## Editor Menus - Select for GP modes
+    bpy.types.VIEW3D_MT_editor_menus.remove(BFA_MT_editor_menus_gp_select)
+
+    ## Grease Pencil Edit & Vertex Paint Select menu
+    bpy.types.VIEW3D_MT_select_edit_grease_pencil.remove(ops.BFA_OT_gp_select_layer_under_mouse.menu_func)
+
+    ## Remove keymap items
+    for km, kmi in ui_keymap_items:
+        km.keymap_items.remove(kmi)
+    ui_keymap_items.clear()
 
 
     for cls in menu_classes:
